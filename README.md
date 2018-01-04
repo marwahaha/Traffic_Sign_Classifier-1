@@ -35,30 +35,31 @@ Following is the summary statistic:
 * The number of unique classes/labels in the data set is 43
 
 #### 2. Following image shows examples of images in the dataset.
-
-![][/writeup_images/explore.png]
+<img src="writeup_images/explore.png">
 
 ### Design and Test a Model Architecture
 
-#### 1. Describe how you preprocessed the image data. What techniques were chosen and why did you choose these techniques? Consider including images showing the output of each preprocessing technique. Pre-processing refers to techniques such as converting to grayscale, normalization, etc. (OPTIONAL: As described in the "Stand Out Suggestions" part of the rubric, if you generated additional data for training, describe why you decided to generate additional data, how you generated the data, and provide example images of the additional data. Then describe the characteristics of the augmented training set like number of images in the set, number of images for each class, etc.)
+#### 1. Data Preprocessing
 
-As a first step, I decided to convert the images to grayscale because ...
+I used two main pro-processing steps:
 
-Here is an example of a traffic sign image before and after grayscaling.
+1. Normalizing the images so that they pixel values are between -0.5 and 0.5
+2. Equalizing all the 3 channels so that the brightness effect is removed
 
-![alt text][image2]
+The result of normalization is shown below:
+<img src="writeup_images/normalize.png">
 
-As a last step, I normalized the image data because ...
+The result of equalization is below. 
+<img src="writeup_images/eq.png">
 
-I decided to generate additional data because ... 
+There is not visible difference at this stage but when the above two operations are performed in series, the difference becomes apparent
+<img src="writeup_images/normeq.png">
 
-To add more data to the the data set, I used the following techniques because ... 
+I also introduced transformation of existing training data set to allow generation of additional training images. The transformation consisted of rotation, translation and shear as seen below. This is to account for view angle while picture are taken. The maximum rotation angle is limited to 20 degrees because larger rotation angles might result in some signs looking similar and confusing the training algorithm. The shear and translation are limited to 5 pixels.
 
-Here is an example of an original image and an augmented image:
+<img src="writeup_images/transformed.png">
 
-![alt text][image3]
-
-The difference between the original data set and the augmented data set is the following ... 
+I decided to generate additional data using transformed images to compensate for the small size of the training data. The additional data was generated using the transformation above. 5 additional images were generated for each training image.
 
 
 #### 2. Describe what your final model architecture looks like including model type, layers, layer sizes, connectivity, etc.) Consider including a diagram and/or table describing the final model.
@@ -68,40 +69,58 @@ My final model consisted of the following layers:
 | Layer         		|     Description	        					| 
 |:---------------------:|:---------------------------------------------:| 
 | Input         		| 32x32x3 RGB image   							| 
-| Convolution 3x3     	| 1x1 stride, same padding, outputs 32x32x64 	|
+| Convolution 1x1     	| 1x1 stride, same padding, outputs 32x32x3 	|
 | RELU					|												|
-| Max pooling	      	| 2x2 stride,  outputs 16x16x64 				|
-| Convolution 3x3	    | etc.      									|
-| Fully connected		| etc.        									|
-| Softmax				| etc.        									|
-|						|												|
-|						|												|
+| Convolution 5x5     	| 1x1 stride, same padding, outputs 32x32x16 	|
+| RELU					|												|
+| Convolution 1x1     	| 1x1 stride, same padding, outputs 32x32x32	|
+| RELU					|												|
+| Max pooling	      	| 2x2 stride,  outputs 16x16x32 				|
+| Convolution 1x1     	| 1x1 stride, same padding, outputs 16x16x32 	|
+| RELU					|												|
+| Convolution 5x5     	| 1x1 stride, same padding, outputs 16x16x64 	|
+| RELU					|												|
+| Convolution 1x1     	| 1x1 stride, same padding, outputs 16x16x128	|
+| RELU					|												|
+| Max pooling	      	| 2x2 stride,  outputs 8x8x128 				|
+| Convolution 1x1     	| 1x1 stride, same padding, outputs 8x8x128 	|
+| RELU					|												|
+| Convolution 5x5     	| 1x1 stride, same padding, outputs 8x8x256 	|
+| RELU					|												|
+| Convolution 1x1     	| 1x1 stride, same padding, outputs 8x8x256	|
+| RELU					|												|
+| Max pooling	      	| 2x2 stride,  outputs4x4x256 				|
+| Flatten | Output 4096 |
+| Fully connected		| Output 1024        									|
+| RELU					|												|
+| Dropout | p=0.5 |
+| Fully connected		| Output 256        									|
+| RELU					|												|
+| Dropout | p=0.5 |
+| Softmax				| Output 43        									|
  
+The 1x1 convolution layers are used to increase the depth without significantly increasing the comuptational costs.
 
+The output of the last layer is flattened for connection to a fully connected layer. It is possible to have many different architectures and add complexity through inception modules and so on. But here I just chose this architecture once the validation accuracy exceeded 98%.
 
-#### 3. Describe how you trained your model. The discussion can include the type of optimizer, the batch size, number of epochs and any hyperparameters such as learning rate.
+The two fully connected layers have 50% drop outs layer after each to prevent over fitting. This is finally connectd to the output layer with 43 outputs for the 43 classes.
 
-To train the model, I used an ....
+The test accuracy reached was 96.8%.
 
-#### 4. Describe the approach taken for finding a solution and getting the validation set accuracy to be at least 0.93. Include in the discussion the results on the training, validation and test sets and where in the code these were calculated. Your approach may have been an iterative process, in which case, outline the steps you took to get to the final solution and why you chose those steps. Perhaps your solution involved an already well known implementation or architecture. In this case, discuss why you think the architecture is suitable for the current problem.
+#### 3. Model details
+
+- __Hyperparameters__: Chose a learning rate of 1e-3 with L2 regularization coefficient of 1e-6. A batch size of 100 for a total of 22 Epochs
+- __Optimization__ : I used adamoptimizer with default settings for optimization.
+
+#### 4. Approach
+
+I started with the Lenet architecture with gave me 80% validation accuracy at the outset without any modification to the images. Preprocessing the images improved the accuracy to about 92%. After this I started tweaking the hyper parameters to see if I can gain any improvement. This was the most inefficient part of the process - essetially tuning some parameters to gain some improvement in performance. Soon I abondoned this and started focusing on the network architecture. Literature suggested having 3 layers to identify features from basic shapes like lines to more advanced features. The lectures also suggested using 1x1 filter convolutions to increase depth without incurring computational penalties. This was used to come up with the architecture described above.
+
+There are a lot of knobs to turn here to gain small improvements here and there, but once I got the validation accuracy above 98% I stopped fiddling with the structure and the hyper parameters.
 
 My final model results were:
-* training set accuracy of ?
-* validation set accuracy of ? 
-* test set accuracy of ?
-
-If an iterative approach was chosen:
-* What was the first architecture that was tried and why was it chosen?
-* What were some problems with the initial architecture?
-* How was the architecture adjusted and why was it adjusted? Typical adjustments could include choosing a different model architecture, adding or taking away layers (pooling, dropout, convolution, etc), using an activation function or changing the activation function. One common justification for adjusting an architecture would be due to overfitting or underfitting. A high accuracy on the training set but low accuracy on the validation set indicates over fitting; a low accuracy on both sets indicates under fitting.
-* Which parameters were tuned? How were they adjusted and why?
-* What are some of the important design choices and why were they chosen? For example, why might a convolution layer work well with this problem? How might a dropout layer help with creating a successful model?
-
-If a well known architecture was chosen:
-* What architecture was chosen?
-* Why did you believe it would be relevant to the traffic sign application?
-* How does the final model's accuracy on the training, validation and test set provide evidence that the model is working well?
- 
+* validation set accuracy of 98.5%
+* test set accuracy of 96.8% 
 
 ### Test a Model on New Images
 
@@ -109,10 +128,9 @@ If a well known architecture was chosen:
 
 Here are five German traffic signs that I found on the web:
 
-![alt text][image4] ![alt text][image5] ![alt text][image6] 
-![alt text][image7] ![alt text][image8]
+<img src="writeup_images/germansigns.png">
 
-The first image might be difficult to classify because ...
+The first image might be difficult to classify because there is a large red area and there is dominant line at the bottom which may cause the network to classify it as a stop sign.
 
 #### 2. Discuss the model's predictions on these new traffic signs and compare the results to predicting on the test set. At a minimum, discuss what the predictions were, the accuracy on these new predictions, and compare the accuracy to the accuracy on the test set (OPTIONAL: Discuss the results in more detail as described in the "Stand Out Suggestions" part of the rubric).
 
@@ -120,32 +138,16 @@ Here are the results of the prediction:
 
 | Image			        |     Prediction	        					| 
 |:---------------------:|:---------------------------------------------:| 
-| Stop Sign      		| Stop sign   									| 
-| U-turn     			| U-turn 										|
-| Yield					| Yield											|
-| 100 km/h	      		| Bumpy Road					 				|
-| Slippery Road			| Slippery Road      							|
+| Keep right      		| Stop sign   									| 
+| Speed limit 20km/h      			| Speed limit 20km/h 										|
+| No passing for vehicles over 3.5 metric tons				| No passing for vehicles over 3.5 metric tons											|
+| Beware of ice/snow	      		| Beware of ice/snow					 				|
+| Go straight or right		| Go straight or right      							|
 
 
-The model was able to correctly guess 4 of the 5 traffic signs, which gives an accuracy of 80%. This compares favorably to the accuracy on the test set of ...
+The model was able to correctly guess79.1% of signs. This is significantly lower than test set accuracy of 96.8%
 
-#### 3. Describe how certain the model is when predicting on each of the five new images by looking at the softmax probabilities for each prediction. Provide the top 5 softmax probabilities for each image along with the sign type of each probability. (OPTIONAL: as described in the "Stand Out Suggestions" part of the rubric, visualizations can also be provided such as bar charts)
-
-The code for making predictions on my final model is located in the 11th cell of the Ipython notebook.
-
-For the first image, the model is relatively sure that this is a stop sign (probability of 0.6), and the image does contain a stop sign. The top five soft max probabilities were
-
-| Probability         	|     Prediction	        					| 
-|:---------------------:|:---------------------------------------------:| 
-| .60         			| Stop sign   									| 
-| .20     				| U-turn 										|
-| .05					| Yield											|
-| .04	      			| Bumpy Road					 				|
-| .01				    | Slippery Road      							|
+#### 3. The soft max probabilities are in the image below:
 
 
-For the second image ... 
-
-### (Optional) Visualizing the Neural Network (See Step 4 of the Ipython notebook for more details)
-#### 1. Discuss the visual output of your trained network's feature maps. What characteristics did the neural network use to make classifications?
-
+<img src="writeup_images/softmax.png">
