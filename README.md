@@ -150,4 +150,13 @@ The model was able to correctly guess79.1% of signs. This is significantly lower
 #### 3. The soft max probabilities are in the image below:
 
 
-<img src="writeup_images/softmax.png">
+<img src="writeup_images/sm1.png">
+
+<img src="writeup_images/sm2.png">
+
+<img src="writeup_images/sm3.png">
+
+<img src="writeup_images/sm4.png">
+
+<img src="writeup_images/sm5.png">
+
