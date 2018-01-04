@@ -35,8 +35,7 @@ Following is the summary statistic:
 * The number of unique classes/labels in the data set is 43
 
 #### 2. Following image shows examples of images in the dataset.
-
-![][/writeup_images/explore.png]
+<img src="writeup_images/explore.png">
 
 ### Design and Test a Model Architecture
 
